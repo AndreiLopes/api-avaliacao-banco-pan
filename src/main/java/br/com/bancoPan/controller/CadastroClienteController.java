@@ -8,23 +8,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.bancoPan.dto.ObjectData;
-import br.com.bancoPan.dto.error.ExceptionResponse;
 import br.com.bancoPan.entity.Cliente;
+import br.com.bancoPan.entity.Endereco;
+import br.com.bancoPan.exception.CustomException;
 import br.com.bancoPan.service.ClienteService;
 
 /**
- * Classe de CRUD de Clientes - {@link CadastroCrienteController}
+ * Classe de CRUD de Clientes - {@link CadastroClienteController}
  * 
  * @author andrei-lopes - 2020-10-19
  */
 @RestController
 @RequestMapping("/v1")
-public class CadastroCrienteController {
+public class CadastroClienteController {
 
 	private static final String UNEXPECTED_ERROR = "Erro inesperado: ";
 
@@ -32,11 +34,10 @@ public class CadastroCrienteController {
 	private ClienteService service;
 
 	@GetMapping("/clientes")
-	public ResponseEntity<?> listaTodosCliente() {
+	public ResponseEntity<?> listaTodosCliente() throws Exception, CustomException {
 
 		try {
 			ObjectData data = new ObjectData();
-
 			data.setData(service.buscaTodosClientes());
 
 			return new ResponseEntity<>(data, HttpStatus.OK);
@@ -53,11 +54,11 @@ public class CadastroCrienteController {
 	 * @return cliente
 	 */
 	@GetMapping("/cliente/{id_cliente}")
-	public ResponseEntity<?> consultaClientePeloId(@PathVariable("id_cliente") String id) throws Exception {
+	public ResponseEntity<?> consultaClientePeloId(@PathVariable("id_cliente") String id)
+			throws Exception, CustomException {
 
 		try {
 			ObjectData data = new ObjectData();
-
 			data.setData(service.buscaClientePeloId(id));
 
 			return new ResponseEntity<>(data, HttpStatus.OK);
@@ -74,19 +75,19 @@ public class CadastroCrienteController {
 	 * @return cliente
 	 */
 	@GetMapping("/cliente/consulta/{cpf}")
-	public ResponseEntity<?> consultaClientePeloCpf(@PathVariable("cpf") String cpf) throws Exception {
+	public ResponseEntity<?> consultaClientePeloCpf(@PathVariable("cpf") String cpf) throws Exception, CustomException {
 
 		try {
 			ObjectData data = new ObjectData();
-			Cliente cliente = service.buscaClientePeloCpf(cpf);
+			final Cliente cliente = service.buscaClientePeloCpf(cpf);
 
 			if (!cliente.getNome().isEmpty()) {
 				data.setData(cliente);
 				return new ResponseEntity<>(data, HttpStatus.OK);
 
-			} else {
-				return ResponseEntity.notFound().build();
 			}
+			return ResponseEntity.notFound().build();
+
 		} catch (Exception e) {
 			return extracted(e);
 		}
@@ -99,10 +100,11 @@ public class CadastroCrienteController {
 	 * @return Novo Cliente Salvo
 	 */
 	@PostMapping("/cliente/cadastrar")
-	public ResponseEntity<?> cadastrarCliente(@Valid @RequestBody Cliente cliente) throws Exception {
+	public ResponseEntity<?> cadastrarCliente(@Valid @RequestBody Cliente cliente) throws Exception, CustomException {
 
 		try {
 			ObjectData data = new ObjectData();
+
 			data.setData(service.salvarCliente(cliente));
 			return new ResponseEntity<>(data, HttpStatus.CREATED);
 
@@ -112,8 +114,25 @@ public class CadastroCrienteController {
 
 	}
 
+	@PutMapping("/cliente/atualizar/{cpf}")
+	public ResponseEntity<?> atualizarClientePeloCpf(@Valid @RequestBody Cliente cliente)
+			throws Exception, CustomException {
+
+		try {
+			ObjectData data = new ObjectData();
+			final Endereco endereco = new EnderecoController().atualizaEndereco();
+
+			cliente.setEndereco(endereco);
+			data.setData(service.salvarCliente(cliente));
+			return new ResponseEntity<>(data, HttpStatus.CREATED);
+
+		} catch (Exception e) {
+			return extracted(e);
+		}
+	}
+
 	private ResponseEntity<?> extracted(Exception e) {
-		ExceptionResponse response = new ExceptionResponse(500, UNEXPECTED_ERROR + e.getMessage());
-		return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		CustomException custom = new CustomException(UNEXPECTED_ERROR + e.getMessage());
+		return custom.responseException(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

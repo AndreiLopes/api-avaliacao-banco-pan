@@ -28,7 +28,7 @@ public class ClienteService {
 	}
 
 	public Cliente salvarCliente(Cliente cliente) {
-		return repository.save(cliente);
+		return repository.saveAndFlush(cliente);
 	}
 
 }

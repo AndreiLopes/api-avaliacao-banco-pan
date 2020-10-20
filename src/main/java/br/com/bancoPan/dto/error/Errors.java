@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Classe de serializacao {@link Errors}
  * 
- * @author andrei-lopes - 2020-10-19
+ * @author andrei-lopes - 2020-02-22
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
