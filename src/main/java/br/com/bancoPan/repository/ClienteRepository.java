@@ -1,12 +1,11 @@
 package br.com.bancoPan.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import br.com.bancoPan.entity.Cliente;
 
-@Repository
-public interface ClienteRepository extends JpaRepository<Cliente, String> {
+public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 
+	Cliente findById(long id);
 	Cliente findByCpf(String cpf);
 }

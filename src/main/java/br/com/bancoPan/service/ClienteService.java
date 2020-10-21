@@ -1,34 +1,50 @@
 package br.com.bancoPan.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import br.com.bancoPan.entity.Cliente;
+import br.com.bancoPan.entity.Endereco;
 import br.com.bancoPan.repository.ClienteRepository;
 
 @Service
 public class ClienteService {
 
 	@Autowired
-	private ClienteRepository repository;
+	ClienteRepository repository;
 
-	public List<Cliente> buscaTodosClientes() {
+	@Autowired
+	EnderecoService enderecoService;
+
+	public List<Cliente> obterClientes() {
 		return repository.findAll();
 	}
 
-	public Optional<Cliente> buscaClientePeloId(String id) {
+	public Cliente cadastroCliente(Cliente cliente) {
+
+		Endereco endereco = enderecoService.atualizaEndereco(cliente.getEndereco());
+		cliente.setEndereco(endereco);
+
+		return repository.saveAndFlush(cliente);
+	}
+
+	public Cliente obterClienteID(long id) {
+
 		return repository.findById(id);
 	}
 
-	public Cliente buscaClientePeloCpf(String cpf) {
-		return repository.findByCpf(cpf);
-	}
+	public ResponseEntity<?> obterClienteCpf(String cpf) {
 
-	public Cliente salvarCliente(Cliente cliente) {
-		return repository.save(cliente);
-	}
+		Cliente cliente = repository.findByCpf(cpf);
 
+		if (!cliente.getNome().isEmpty()) {
+			return ResponseEntity.ok(cliente);
+
+		} else {
+			return ResponseEntity.notFound().build();
+		}
+	}
 }
