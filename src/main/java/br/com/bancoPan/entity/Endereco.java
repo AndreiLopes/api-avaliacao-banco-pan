@@ -48,32 +48,13 @@ public class Endereco implements Serializable {
 	@JsonProperty("estado")
 	private String estado;
 
-	@JsonProperty("pais")
-	private String pais;
-
-	public Endereco() {
-	}
-
-	public Endereco(String codigo, String logradouro, String numeroCasa, String bairro, String cidade, String estado,
-			String cep, String pais) {
+	public Endereco(String logradouro, String numeroCasa, String bairro, String cidade, String cep) {
 		super();
-		this.codigo = codigo;
 		this.logradouro = logradouro;
 		this.numeroCasa = numeroCasa;
 		this.bairro = bairro;
 		this.cidade = cidade;
-		this.estado = estado;
 		this.cep = cep;
-		this.pais = pais;
-	}
-
-	public Endereco(String logradouro, String bairro, String cidade, String estado, String cep, String pais) {
-		this.logradouro = logradouro;
-		this.bairro = bairro;
-		this.cidade = cidade;
-		this.estado = estado;
-		this.cep = cep;
-		this.pais = pais;
 	}
 
 	public String getCodigo() {
@@ -130,14 +111,6 @@ public class Endereco implements Serializable {
 
 	public void setEstado(String estado) {
 		this.estado = estado;
-	}
-
-	public String getPais() {
-		return pais;
-	}
-
-	public void setPais(String pais) {
-		this.pais = pais;
 	}
 
 	public static long getSerialversionuid() {

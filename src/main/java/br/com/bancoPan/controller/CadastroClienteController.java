@@ -120,10 +120,11 @@ public class CadastroClienteController {
 
 		try {
 			ObjectData data = new ObjectData();
-			final Endereco endereco = new EnderecoController().atualizaEndereco();
 
+			Endereco endereco = new EnderecoController().atualizaEndereco(cliente.getEndereco());
 			cliente.setEndereco(endereco);
 			data.setData(service.salvarCliente(cliente));
+
 			return new ResponseEntity<>(data, HttpStatus.CREATED);
 
 		} catch (Exception e) {

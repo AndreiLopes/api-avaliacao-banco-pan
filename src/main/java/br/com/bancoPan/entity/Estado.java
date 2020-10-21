@@ -1,5 +1,10 @@
 package br.com.bancoPan.entity;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -53,4 +58,30 @@ public class Estado {
 		this.sigla = sigla;
 	}
 
+	public List<Estado> classificarEstados(List<Estado> estados) {
+
+		List<Estado> ordenadoSPeRJ = new ArrayList<Estado>();
+		List<Estado> ordenadoOutros = new ArrayList<Estado>();
+
+		for (int i = 0; i < estados.size(); i++) {
+
+			Estado estado = estados.get(i);
+			boolean estadoSP = estado.getSigla().equalsIgnoreCase("SP");
+			boolean estadpRJ = estado.getSigla().equalsIgnoreCase("RJ");
+
+			if (estadoSP || estadpRJ) {
+				ordenadoSPeRJ.add(estado);
+
+				if (ordenadoSPeRJ.size() == 2) {
+				}
+			} else {
+				ordenadoOutros.add(estado);
+			}
+		}
+		Collections.sort(ordenadoSPeRJ, Comparator.comparing(Estado::getSigla).reversed());
+		Collections.sort(ordenadoOutros, Comparator.comparing(Estado::getSigla));
+
+		ordenadoSPeRJ.addAll(ordenadoOutros);
+		return ordenadoSPeRJ;
+	}
 }
