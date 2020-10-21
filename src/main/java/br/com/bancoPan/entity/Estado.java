@@ -5,49 +5,29 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(Include.NON_NULL)
 public class Estado {
 
-	@JsonProperty("codigo")
-	private int codigo;
-
-	@JsonProperty("nome")
-	private String nome;
-
-	@JsonProperty("sigla")
+	private int id;
 	private String sigla;
+	private String nome;
 
 	public Estado() {
 		super();
 	}
 
-	public Estado(int codigo, String nome, String sigla) {
+	public Estado(int id, String sigla, String nome) {
 		super();
-		this.codigo = codigo;
-		this.nome = nome;
+		this.id = id;
 		this.sigla = sigla;
-	}
-
-	public int getCodigo() {
-		return codigo;
-	}
-
-	public void setCodigo(int codigo) {
-		this.codigo = codigo;
-	}
-
-	public String getNome() {
-		return nome;
-	}
-
-	public void setNome(String nome) {
 		this.nome = nome;
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
 	}
 
 	public String getSigla() {
@@ -58,30 +38,39 @@ public class Estado {
 		this.sigla = sigla;
 	}
 
-	public List<Estado> classificarEstados(List<Estado> estados) {
+	public String getNome() {
+		return nome;
+	}
 
-		List<Estado> ordenadoSPeRJ = new ArrayList<Estado>();
-		List<Estado> ordenadoOutros = new ArrayList<Estado>();
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+
+	public List<Estado> classificaEstados(List<Estado> estados) {
+
+		List<Estado> estadosSPeRJ = new ArrayList<Estado>();
+		List<Estado> estadosOutros = new ArrayList<Estado>();
 
 		for (int i = 0; i < estados.size(); i++) {
-
 			Estado estado = estados.get(i);
-			boolean estadoSP = estado.getSigla().equalsIgnoreCase("SP");
-			boolean estadpRJ = estado.getSigla().equalsIgnoreCase("RJ");
 
-			if (estadoSP || estadpRJ) {
-				ordenadoSPeRJ.add(estado);
+			boolean sPeRJ = estado.getSigla().equals("SP");
+			boolean outros = estado.getSigla().equals("RJ");
 
-				if (ordenadoSPeRJ.size() == 2) {
+			if (sPeRJ || outros) {
+				estadosSPeRJ.add(estado);
+
+				if (estadosSPeRJ.size() == 2) {
 				}
 			} else {
-				ordenadoOutros.add(estado);
+				estadosOutros.add(estado);
 			}
 		}
-		Collections.sort(ordenadoSPeRJ, Comparator.comparing(Estado::getSigla).reversed());
-		Collections.sort(ordenadoOutros, Comparator.comparing(Estado::getSigla));
 
-		ordenadoSPeRJ.addAll(ordenadoOutros);
-		return ordenadoSPeRJ;
+		Collections.sort(estadosOutros, Comparator.comparing(Estado::getSigla));
+		Collections.sort(estadosSPeRJ, Comparator.comparing(Estado::getSigla).reversed());
+
+		estadosSPeRJ.addAll(estadosOutros);
+		return estadosSPeRJ;
 	}
 }

@@ -31,6 +31,11 @@ public class CustomException extends Exception {
 		this.text = text;
 	}
 
+	public CustomException(String text, HttpStatus unprocessableEntity) {
+		super();
+		this.text = text;
+	}
+
 	@SuppressWarnings("rawtypes")
 	public ResponseEntity responseException(HttpStatus status) {
 		ExceptionResponse resp = new ExceptionResponse();
