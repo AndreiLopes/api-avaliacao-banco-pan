@@ -1,110 +1,118 @@
 package br.com.bancoPan.controller;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.bancoPan.dto.ObjectData;
-import br.com.bancoPan.entity.Cliente;
-import br.com.bancoPan.exception.CustomException;
-import br.com.bancoPan.service.ClienteService;
+import br.com.bancoPan.model.Endereco;
+import br.com.bancoPan.model.Pessoa;
+import br.com.bancoPan.service.PessoaService;
+import br.com.bancoPan.service.UtilService;
 
 /**
  * Classe para orquestrar requisições de Clientes.
  * 
- * @author andrei-lopes - 2020-10-21
+ * @author andrei
  */
 @RestController
 @RequestMapping(value = "/v1")
 public class ClienteController {
 
-	private static final String ERROR = "Erro: ";
+	private UtilService utilService;
+
+	private PessoaService service;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClienteController.class);
 
 	@Autowired
-	ClienteService service;
-
-	/**
-	 * Metodo que Salva Cliente
-	 * 
-	 * @param cliente
-	 * @return
-	 */
-	@PostMapping("/cliente")
-	public ResponseEntity<?> cadastraCliente(@RequestBody Cliente cliente) {
-		try {
-			ObjectData data = new ObjectData();
-			data.setData(service.cadastroCliente(cliente));
-
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
-		}
+	public ClienteController(UtilService utilService, PessoaService service) {
+		this.utilService = utilService;
+		this.service = service;
 	}
 
 	/**
-	 * Metodo que obtem todos os clientes cadastrados
-	 * 
-	 * @return
-	 */
-	@GetMapping("/clientes")
-	public ResponseEntity<?> obtemTodosClientes() {
-
-		try {
-			ObjectData data = new ObjectData();
-			data.setData(service.obterClientes());
-
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
-		}
-	}
-
-	/**
-	 * Metodo que retorna cliente pelo CPF
+	 * Obtem os dados cadastrais de uma pessoa
 	 * 
 	 * @param cpf
-	 * @return Cliente
+	 * @return
 	 */
-	@GetMapping("/cliente/consulta/{cpf}")
-	public ResponseEntity<?> obtemClientePeloCpf(@PathVariable(value = "cpf") String cpf) {
-		try {
-			ObjectData data = new ObjectData();
-			data.setData(service.obterClienteCpf(cpf));
+	@GetMapping(value = "/pessoa/{cpf}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<Pessoa> obterDadosPessoa(@PathVariable("cpf") String cpf) {
 
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
+		LOGGER.info("Recebendo requisição para obter os dados da pessoa com o parâmetro cpf: {}", cpf);
+
+		// Validar os dados de entrada (gera uma exception em casos de erro)
+		utilService.validarDadosEntrada(cpf, null, null, null);
+
+		// Realiza a consulta
+		Pessoa pessoa = service.consultarPessoa(cpf);
+
+		if (pessoa == null) {
+			return ResponseEntity.noContent().build();
 		}
+
+		// Retornar o resutado
+		LOGGER.info("Finalizando com sucesso a requisição da pessoa com o parâmetro cpf: {}", cpf);
+
+		return ResponseEntity.ok(pessoa);
 	}
 
 	/**
-	 * Metodo que retorna cliente pelo ID.
+	 * Obtem os dados de endereço de uma pessoa
 	 * 
-	 * @param id
+	 * @param cpf
+	 * @param cep
 	 * @return
 	 */
-	@GetMapping("/cliente/{id}")
-	public ResponseEntity<?> obtemClientePeloId(@PathVariable(value = "id") long id) {
+	@GetMapping("/pessoa/{cpf}/endereco/{cep}")
+	public ResponseEntity<List<Endereco>> obterEnderecoPessoa(@PathVariable("cpf") String cpf,
+			@PathVariable("cep") String cep) {
 
-		try {
-			ObjectData data = new ObjectData();
-			data.setData(service.obterClienteID(id));
+		LOGGER.info("Recebendo requisição para obter os dados da pessoa com o parâmetro cpf: {}, cep: {}", cpf, cep);
 
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
+		// Validar os dados de entrada (gera uma exception em casos de erro)
+		utilService.validarDadosEntrada(cpf, cep, null, null);
+
+		// Realiza a consulta
+		List<Endereco> enderecos = service.consultarEnderecoPessoa(cpf, cep);
+
+		if (enderecos.isEmpty()) {
+			return ResponseEntity.noContent().build();
 		}
 
+		// Retornar o resutado
+		LOGGER.info("Finalizando com sucesso a requisição da pessoa com o parâmetro cpf: {}, cep: {}", cpf, cep);
+
+		return ResponseEntity.ok(enderecos);
 	}
 
-	private ResponseEntity<?> extracted(Exception e) {
-		CustomException custom = new CustomException(ERROR + e.getMessage());
-		return custom.responseException(HttpStatus.INTERNAL_SERVER_ERROR);
+	@PutMapping("/pessoa/{cpf}/endereco/{enderecoId}")
+	public ResponseEntity<Endereco> alterarEnderecoPessoa(@PathVariable("cpf") String cpf,
+			@PathVariable("enderecoId") Long enderecoId, @RequestBody Endereco enderecoAlterado) {
+
+		LOGGER.info("Recebendo requisição para alterar endereço da pessoa com o parâmetro cpf: {}, enderecoId: {}", cpf,
+				enderecoId);
+
+		// Validar os dados de entrada (gera uma exception em casos de erro)
+		utilService.validarDadosEntrada(cpf, null, enderecoId, enderecoAlterado);
+
+		Endereco endereco = service.alterarEnderecoPessoa(cpf, enderecoId, enderecoAlterado);
+
+		if (endereco == null) {
+			return ResponseEntity.noContent().build();
+
+		} else {
+			return ResponseEntity.ok(endereco);
+		}
 	}
 }

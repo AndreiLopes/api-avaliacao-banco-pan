@@ -1,63 +1,53 @@
 package br.com.bancoPan.exception;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
-import br.com.bancoPan.dto.error.ExceptionResponse;
 
 /**
  * Classe de tratamento de excecao {@link CustomException}
  * 
  * @author andrei-lopes - 2020-02-22
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(Include.NON_NULL)
-public class CustomException extends Exception {
-
+public class CustomException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	private String text;
+	private HttpStatus errorStatus;
+	private String errorMessage;
+	private List<String> errorDetails = new ArrayList<String>();
 
-	public CustomException() {
-		super();
+	public CustomException(HttpStatus errorStatusParam, String errorMessageParam, List<String> errorDetailsParam) {
+		this.errorStatus = errorStatusParam;
+		this.errorMessage = errorMessageParam;
+		this.errorDetails.addAll(errorDetailsParam);
 	}
 
-	public CustomException(String text) {
-		super();
-		this.text = text;
+	/**
+	 * Gets the error message.
+	 *
+	 * @return the errorMessage
+	 */
+	public String getErrorMessage() {
+		return errorMessage;
 	}
 
-	public CustomException(String text, HttpStatus unprocessableEntity) {
-		super();
-		this.text = text;
+	/**
+	 * Gets the error details.
+	 *
+	 * @return the errorDetails
+	 */
+	public List<String> getErrorDetails() {
+		return errorDetails;
 	}
 
-	@SuppressWarnings("rawtypes")
-	public ResponseEntity responseException(HttpStatus status) {
-		ExceptionResponse resp = new ExceptionResponse();
-		resp.setStatus(status.value());
-		resp.setMessage(text);
-		return new ResponseEntity<>(resp, status);
-	}
-
-	public String responseExceptionString(HttpStatus status) {
-		ExceptionResponse resp = new ExceptionResponse();
-		resp.setStatus(status.value());
-		resp.setMessage(text);
-		return resp.toString();
-	}
-
-	@SuppressWarnings("rawtypes")
-	public ResponseEntity responseException(ExceptionResponse resp) {
-		return new ResponseEntity<>(resp, HttpStatus.valueOf(resp.getStatus()));
-	}
-
-	public String responseExceptionInteger(ExceptionResponse resp) {
-		return resp.toString();
+	/**
+	 * Gets the error status.
+	 *
+	 * @return the errorStatus
+	 */
+	public HttpStatus getErrorStatus() {
+		return errorStatus;
 	}
 
 }

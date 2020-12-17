@@ -3,8 +3,8 @@ package br.com.bancoPan.repository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
-import br.com.bancoPan.model.entity.EnderecoEntity;
+import br.com.bancoPan.model.entity.TelefoneEntity;
 
 @Repository
-public interface EnderecoRepository extends CrudRepository<EnderecoEntity, Long> {
+public interface TelefoneRepository extends CrudRepository<TelefoneEntity, Long> {
 }
