@@ -2,123 +2,117 @@ package br.com.bancoPan.controller;
 
 import java.util.List;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.bancoPan.dto.ObjectData;
-import br.com.bancoPan.entity.Cidade;
-import br.com.bancoPan.entity.Endereco;
-import br.com.bancoPan.entity.Estado;
-import br.com.bancoPan.exception.CustomException;
+import br.com.bancoPan.model.Endereco;
+import br.com.bancoPan.model.Estado;
+import br.com.bancoPan.model.Municipio;
 import br.com.bancoPan.service.EnderecoService;
+import br.com.bancoPan.service.UtilService;
 
 /**
  * Classe para orquestrar requisições de Endereco.
  * 
- * @author andrei-lopes - 2020-10-21
+ * @author andrei
  */
 @RestController
 @RequestMapping(value = "/v1")
 public class EnderecoController {
 
-	private static final String ERROR = "Erro: ";
+	private UtilService utilService;
+
+	private EnderecoService service;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(EnderecoController.class);
 
 	@Autowired
-	EnderecoService service;
-
-	/**
-	 * Atualiza endereco do cliente
-	 * 
-	 * @param endereco
-	 * @return
-	 */
-	@PostMapping(value = "/endereco/editar")
-	public ResponseEntity<?> atualizaEndereco(@RequestBody Endereco endereco) {
-
-		try {
-			ObjectData data = new ObjectData();
-			data.setData(service.atualizaEndereco(endereco));
-
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
-		}
+	public EnderecoController(UtilService utilService, EnderecoService service) {
+		this.utilService = utilService;
+		this.service = service;
 	}
 
 	/**
-	 * Obtem Lista de estados.
+	 * Endpoint de entrada para obter uma lista de Estados
 	 * 
 	 * @return
 	 */
-	@GetMapping(value = "endereco/consulta/estados")
-	public ResponseEntity<?> listaTodosEstados() {
+	@GetMapping(value = "/endereco/estados", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<List<Estado>> obterListaEstados() {
 
-		try {
-			ObjectData data = new ObjectData();
-			List<Estado> estados = service.obtemListaTodosEstados();
-			data.setData(new Estado().classificaEstados(estados));
+		LOGGER.info("Recebendo requisição para obter lista de estados.");
+		List<Estado> listaEstados = service.obterListaEstados();
 
-			return ResponseEntity.ok(data);
-		} catch (Exception e) {
-			return extracted(e);
+		if (listaEstados.isEmpty()) {
+			LOGGER.error("Nenhum estado encontrado.");
+			return ResponseEntity.noContent().build();
 		}
+		LOGGER.info("Finalizando com sucesso a requisição de lista de estados");
+		return ResponseEntity.ok(listaEstados);
 	}
 
 	/**
-	 * Obtem endereco pelo CEP.
+	 * Endpoint de entrada para obter uma lista de Municipios de um determinado
+	 * Estado
+	 * 
+	 * @param estadoId
+	 * @return
+	 */
+	@GetMapping(value = "/endereco/estados/{estadoId}/municipios", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<List<Municipio>> obterListaMunicipios(@PathVariable("estadoId") Integer estadoId) {
+
+		LOGGER.info("Recebendo requisição para obter lista de municipios com o parametro estadoId: {}.", estadoId);
+
+		if (estadoId <= 0) {
+
+			LOGGER.error("Erro de validação para o parâmetro estadoId: {},  erro: o numero informado é invalido.",
+					estadoId);
+			return ResponseEntity.badRequest().build();
+		}
+
+		List<Municipio> listaMunicipios = service.obterListaMunicipios(estadoId);
+
+		if (listaMunicipios.isEmpty()) {
+
+			LOGGER.error("Nenhum municipio encontrado com o parâmetro estadoId: {}.", estadoId);
+			return ResponseEntity.noContent().build();
+		}
+
+		LOGGER.info("Finalizando com sucesso a requisição de lista de municipios para o parâmetros estadoId: {}.",
+				estadoId);
+		return ResponseEntity.ok(listaMunicipios);
+	}
+
+	/**
+	 * Obtem os dados de um endereço pelo seu CEP
 	 * 
 	 * @param cep
 	 * @return
 	 */
-	@GetMapping(value = "endereco/consulta/{cep}")
-	public ResponseEntity<?> obtemEnderecoPeloCep(@PathVariable(value = "cep") String cep) {
+	@GetMapping(value = "/endereco/cep/{cep}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ResponseEntity<Endereco> obterEnderecoDoCep(@PathVariable("cep") String cep) {
 
-		JsonObject jsonInput = service.obtemCep(cep);
-		Endereco endereco = null;
-		JsonValue jsonErro = jsonInput.get("erro");
+		LOGGER.info("Recebendo requisição para obter os dados do endereço com o parâmetro cep: {}", cep);
 
-		if (jsonErro == null) {
+		// Validar os dados de entrada (gera uma exception em casos de erro)
+		utilService.validarDadosEntrada(null, cep, null, null);
 
-			endereco = new Endereco(jsonInput.getString("logradouro"), jsonInput.getString("bairro"),
-					jsonInput.getString("localidade"), jsonInput.getString("uf"), jsonInput.getString("cep"));
+		Endereco endereco = service.obterEnderecoDoCep(cep);
+		if (endereco == null) {
 
-			return ResponseEntity.ok(endereco);
-		} else {
-			return ResponseEntity.notFound().build();
+			LOGGER.error("Nenhum endereço encontrado com o parâmetro cep: {}.", cep);
+			return ResponseEntity.noContent().build();
 		}
-	}
 
-	/**
-	 * Otem cidade pelo ID.
-	 * 
-	 * @param id
-	 * @return
-	 */
-	@GetMapping(value = "/endereco/consulta/cidades/{id}")
-	public ResponseEntity<?> obtemCidadePeloId(@PathVariable(value = "id") int id) {
-
-		List<Cidade> cidades = service.obterCidadePeloId(id);
-
-		if (!cidades.isEmpty()) {
-			return ResponseEntity.ok(cidades);
-
-		} else {
-			return ResponseEntity.notFound().build();
-		}
-	}
-
-	private ResponseEntity<?> extracted(Exception e) {
-		CustomException custom = new CustomException(ERROR + e.getMessage());
-		return custom.responseException(HttpStatus.INTERNAL_SERVER_ERROR);
+		LOGGER.info("Finalizando com sucesso a requisição para obter os dados do endereço com o parâmetro cep: {}",
+				cep);
+		return ResponseEntity.ok(endereco);
 	}
 }
